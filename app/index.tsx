@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 
 const SigninScreen = () => {
 
@@ -23,9 +23,9 @@ const SigninScreen = () => {
 
     return <SafeAreaView style={styles.container}>
 
-        <View style={styles.mainBox}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.mainBox}>
 
-            <View style={styles.header}>
+            <View>
                 <Text style={styles.title}>Login</Text>
                 <Text style={styles.subtitle}>Conecte-se à sua conta em nosso aplicativo.</Text>
             </View>
@@ -46,20 +46,22 @@ const SigninScreen = () => {
                     placeholderTextColor="#666"
                     secureTextEntry
                 />
-            </View>
-
-            <View style={styles.actions}>
 
                 <TouchableOpacity style={styles.button} onPress={handleLogin}>
                     <Text style={styles.buttonText}>Entrar</Text>
                 </TouchableOpacity>
+            </View>
+
+            {/* <View style={styles.actions}>
+
+
 
                 <View style={styles.signupBox}>
                     <Text style={styles.signupText}>Não possui conta?</Text>
                     <Text style={styles.signupLink}>Cadastrar-se</Text>
                 </View>
-            </View>
-        </View>
+            </View> */}
+        </KeyboardAvoidingView>
 
         <View style={styles.footer}>
             <Text style={styles.footerText}>©2025 - Rede Lucy Montoro</Text>
@@ -72,23 +74,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
     backgroundColor: "#fff",
     position: "relative",
   },
   mainBox: {
     width: "80%",
-    height: "65%",
-    position: "absolute",
-    top: "10%",
+    height: "75%",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "space-around",
     gap: 12,
-  },
-  header: {
-    position: "absolute",
-    top: 0,
-    left: 0,
   },
   title: {
     fontSize: 56, // text-7xl ~ 56px
@@ -141,11 +136,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     width: "100%",
-    height: 60,
+    height: 85,
     alignItems: "center",
     justifyContent: "center",
-    position: "absolute",
-    bottom: 0,
+    backgroundColor: '#fff',
+    position: "relative",
   },
   footerText: {
     fontSize: 16,
