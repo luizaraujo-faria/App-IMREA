@@ -7,7 +7,8 @@ const HomeScreen = () => {
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
   const [message, setMessage] = useState<string>("");
-  const [status, setStatus] = useState<string>("Desconectado");
+  const [ledState, setLedState] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("Conectar-se");
 
   // Listar dispositivos emparelhados
   const listDevices = async () => {
@@ -15,7 +16,7 @@ const HomeScreen = () => {
     try{
       const paired: BluetoothDevice[] = await RNBluetoothClassic.getBondedDevices();
       setDevices(paired);
-      Alert.alert("Dispositivos encontrados", paired.map(d => d.name).join(", "));
+      Alert.alert("Dispositivos encontrados", paired.map(d => d.name).join(', '));
     }
     catch(error: any){
       Alert.alert("Erro", error.message);
@@ -30,8 +31,9 @@ const HomeScreen = () => {
       const connected: boolean = await device.connect();
 
       if(connected){
+
         setConnectedDevice(device);
-        setStatus(`Conectado a ${device.name}`);
+        setStatus(`Desconectar-se`);
         Alert.alert("Conectado", `Conectado a ${device.name}`);
 
         // Receber dados do ESP32
@@ -47,57 +49,71 @@ const HomeScreen = () => {
     }
   };
 
+  const disconectDevice = async (device: BluetoothDevice) => {
+
+    if(!connectedDevice){
+      setStatus('Conectar-se');
+    }
+  };
+
   // Enviar comando LED
-  const toggleLED = async () => {
+  const toggleLED = async (state: boolean) => {
     if(!connectedDevice) return Alert.alert("Erro", "Nenhum dispositivo conectado");
 
     try{
-      await connectedDevice.write("LED"); // ESP32 deve interpretar "LED"
-      Alert.alert("Comando enviado", "LED acionado!");
+      const command = state ? '1\n' : '0\n';
+      await connectedDevice.write(command); // ESP32 deve interpretar "LED"
+
+      setLedState(state);
+
+      console.log(`Comando enviado: ${command}`)
+      Alert.alert('Comando enviado', state ? 'LED ligado!' : 'LED desligado!');
     } 
     catch(error: any){
       Alert.alert("Erro ao enviar", error.message);
     }
   };
 
-  // Enviar mensagem personalizada
-  const sendMessage = async () => {
-
+  // Enviar menssagem para o display
+  const sendDisplayMessage = async (text: string) => {
     if(!connectedDevice) return Alert.alert("Erro", "Nenhum dispositivo conectado");
+    if(!message.trim()) return Alert.alert('Erro!', 'Escreva uma mensagem antes.');
 
     try{
-      await connectedDevice.write(message);
-      Alert.alert("Mensagem enviada", message);
+      await connectedDevice.write(`display:${text}\n`);
+      Alert.alert('Sucesso!', `Mensagem enviada para o display: "${text}".`);
       setMessage("");
     }
-    catch(error: any){
-      Alert.alert("Erro ao enviar", error.message);
+    catch(err: any){
+      console.log('Falha ao enviar mensagem', err.message);
+      Alert.alert('Falha ao enviar mensagem', err.message);
     }
   };
 
   return (
+
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Controle Bluetooth com Expo</Text>
-      
-      <Text style={styles.status}>Status: {status}</Text>
+      <Text style={styles.title}>Controle Bluetooth</Text>
 
       <TouchableOpacity style={styles.button} onPress={listDevices}> 
-        <Text style={styles.buttonText}>Procurar ESP32</Text>
+        <Text style={styles.buttonText}>Buscar dispositivos</Text>
       </TouchableOpacity>
 
       {devices.map((device) => (
         <TouchableOpacity key={device.address} style={styles.button} onPress={() => connectDevice(device)}>
-          <Text style={styles.buttonText}>Conectar: {device.name}</Text>
+          <Text style={styles.buttonText}>{status} {device.name}</Text>
         </TouchableOpacity>
       ))}
+
+      
 
       <Text style={styles.connectedText}>
         Conectado: {connectedDevice ? connectedDevice.name : "Nenhum"}
       </Text>
 
       <View style={styles.messageContainer}>
-        <TouchableOpacity style={styles.ledButton} onPress={toggleLED}>
-          <Text style={styles.buttonText}>Acionar LED</Text>
+        <TouchableOpacity style={styles.ledButton} onPress={() => toggleLED(true)}>
+          <Text style={styles.buttonText}>Ligar LED</Text>
         </TouchableOpacity>
       </View>
 
@@ -110,7 +126,7 @@ const HomeScreen = () => {
           onChangeText={setMessage}
         />
 
-        <TouchableOpacity style={styles.button} onPress={sendMessage}>
+        <TouchableOpacity style={styles.button} onPress={() => sendDisplayMessage(message)}>
           <Text style={styles.buttonText}>Enviar Mensagem</Text>
         </TouchableOpacity>
       </View>
